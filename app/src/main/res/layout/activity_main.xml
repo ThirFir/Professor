@@ -6,76 +6,57 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
-    <Button
-        android:id="@+id/buttonToggleCapture"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="40dp"
-        android:layout_marginEnd="259dp"
-        android:layout_marginRight="259dp"
-        android:text="Start Capturing"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintStart_toStartOf="@+id/textViewReceived"
-        app:layout_constraintTop_toBottomOf="@+id/textViewReceived" />
 
     <TextView
-        android:id="@+id/textViewStatusInp"
+        android:id="@+id/textViewMessageToSend1"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="60dp"
-        android:layout_marginLeft="60dp"
-        android:layout_marginTop="76dp"
-        android:layout_marginEnd="294dp"
-        android:layout_marginRight="294dp"
-        android:text="Status: Idle"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <TextView
-        android:id="@+id/textViewReceived"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="40dp"
-        android:layout_marginEnd="294dp"
-        android:layout_marginRight="294dp"
-        android:text="Received:"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintStart_toStartOf="@+id/textViewStatusInp"
-        app:layout_constraintTop_toBottomOf="@+id/textViewStatusInp" />
+        android:layout_marginTop="30dp"
+        android:text="출석 키: "
+        app:layout_constraintStart_toStartOf="@+id/buttonTogglePlayback"
+        app:layout_constraintTop_toBottomOf="@+id/textViewStatusOut" />
 
     <TextView
         android:id="@+id/textViewMessageToSend"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="40dp"
-        android:text="Message to send:"
-        app:layout_constraintStart_toStartOf="@+id/textViewStatusOut"
-        app:layout_constraintTop_toBottomOf="@+id/textViewStatusOut" />
+        app:layout_constraintStart_toEndOf="@id/textViewMessageToSend1"
+        app:layout_constraintTop_toTopOf="@id/textViewMessageToSend1"
+        app:layout_constraintBottom_toBottomOf="@id/textViewMessageToSend1"
+        android:layout_marginStart="4dp" />
 
     <TextView
         android:id="@+id/textViewStatusOut"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="60dp"
-        android:layout_marginEnd="294dp"
-        android:layout_marginRight="294dp"
         android:text="Status: Idle"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintStart_toStartOf="@+id/buttonToggleCapture"
-        app:layout_constraintTop_toBottomOf="@+id/buttonToggleCapture" />
+        android:layout_marginTop="12dp"
+        app:layout_constraintStart_toStartOf="@+id/textViewMessageToSend1"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <Button
         android:id="@+id/buttonTogglePlayback"
-        android:layout_width="wrap_content"
+        style="?attr/materialButtonOutlinedStyle"
+        android:layout_width="100dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="40dp"
-        android:text="Send Message"
-        app:layout_constraintStart_toStartOf="@+id/textViewMessageToSend"
-        app:layout_constraintTop_toBottomOf="@+id/textViewMessageToSend" />
+        android:layout_marginTop="30dp"
+        android:text="출석 시작"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/textViewMessageToSend1" />
 
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#575757"
+        app:layout_constraintBottom_toTopOf="@id/rv" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rv"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="200dp"
+        tools:itemCount="12"
+        tools:listitem="@layout/item_attendance"
+        app:layout_constraintTop_toBottomOf="@id/buttonTogglePlayback" />
 </androidx.constraintlayout.widget.ConstraintLayout>

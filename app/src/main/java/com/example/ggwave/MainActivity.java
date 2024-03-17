@@ -1,11 +1,6 @@
 package com.example.ggwave;
 
-import androidx.annotation.NonNull;
-import androidx.appcompat.app.AlertDialog;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
-
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.media.AudioFormat;
@@ -16,17 +11,43 @@ import android.media.MediaRecorder;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
-import android.widget.Button;
-import android.widget.TextView;
 
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+
+import com.example.ggwave.databinding.ActivityMainBinding;
+
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.nio.ShortBuffer;
+import java.util.Random;
+import java.util.concurrent.TimeUnit;
+
+import okhttp3.OkHttpClient;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
 
 public class MainActivity extends AppCompatActivity {
+    private ActivityMainBinding binding;
+    private AttendanceAdapter adapter;
 
-    private String kMessageToSend = "Hello Android!";
+    private String kMessageToSend = generateRandomKey();
     private CapturingThread mCapturingThread;
     private PlaybackThread mPlaybackThread;
     private static final int REQUEST_RECORD_AUDIO = 13;
+
+    // TODO : BASE URL
+    private static final String BASE_URL = "http://";
+    private OkHttpClient client;
+    private Retrofit retrofit;
+    private ServerApi api;
 
     // Native interface:
     private native void initNative();
@@ -41,8 +62,6 @@ public class MainActivity extends AppCompatActivity {
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                TextView textView = (TextView) findViewById(R.id.textViewReceived);
-                textView.setText("Received: " + message);
             }
         });
     }
@@ -58,8 +77,8 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onCompletion() {
                 mPlaybackThread.stopPlayback();
-                ((Button) findViewById(R.id.buttonTogglePlayback)).setText("Send Message");
-                ((TextView) findViewById(R.id.textViewStatusOut)).setText("Status: Idle");
+                binding.buttonTogglePlayback.setText("출석 시작");
+                binding.textViewStatusOut.setText("Status: Idle");
             }
         });
     }
@@ -67,60 +86,65 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        binding = ActivityMainBinding.inflate(getLayoutInflater());
+        setContentView(binding.getRoot());
 
         System.loadLibrary("test-cpp");
         initNative();
+        adapter = new AttendanceAdapter();
+        // initRetrofitApi();
 
         mCapturingThread = new CapturingThread(new AudioDataReceivedListener() {
             @Override
             public void onAudioDataReceived(short[] data) {
-                //Log.v("ggwave", "java: 0 = " + data[0]);
                 processCaptureData(data);
             }
         });
 
-        Button buttonToggleCapture = (Button) findViewById(R.id.buttonToggleCapture);
-        buttonToggleCapture.setOnClickListener( new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (!mCapturingThread.capturing()) {
-                    startAudioCapturingSafe();
-                } else {
-                    mCapturingThread.stopCapturing();
-                }
-
-                if (mCapturingThread.capturing()) {
-                    ((Button) findViewById(R.id.buttonToggleCapture)).setText("Stop Capturing");
-                    ((TextView) findViewById(R.id.textViewStatusInp)).setText("Status: Capturing");
-                    ((TextView) findViewById(R.id.textViewReceived)).setText("Received:");
-                } else {
-                    ((Button) findViewById(R.id.buttonToggleCapture)).setText("Start Capturing");
-                    ((TextView) findViewById(R.id.textViewStatusInp)).setText("Status: Idle");
-                    ((TextView) findViewById(R.id.textViewReceived)).setText("Received:");
-                }
-            }
-        });
-
-        ((TextView) findViewById(R.id.textViewMessageToSend)).setText("Message to send: " + kMessageToSend);
-
-        Button buttonTogglePlayback = (Button) findViewById(R.id.buttonTogglePlayback);
-        buttonTogglePlayback.setOnClickListener( new View.OnClickListener() {
+        binding.buttonTogglePlayback.setOnClickListener( new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 if (mPlaybackThread == null || !mPlaybackThread.playing()) {
-                    sendMessage(kMessageToSend);
-                    mPlaybackThread.startPlayback();
+                    if(api != null) {
+                        api.getRandomKey().enqueue(new Callback<KeyResp>() {
+                            @Override
+                            public void onResponse(Call<KeyResp> call, Response<KeyResp> response) {
+                                if (response.isSuccessful()) {
+                                    KeyResp keyResp = response.body();
+                                    if (keyResp != null) {
+                                        kMessageToSend = keyResp.getKey();
+                                        binding.textViewMessageToSend.setText(kMessageToSend);
+                                    }
+                                } else {
+                                    try {
+                                        Log.e("ggwave", "Error: " + response.errorBody().string());
+                                    } catch (IOException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+                            }
+
+                            @Override
+                            public void onFailure(Call<KeyResp> call, Throwable t) {
+                                Log.e("ggwave", "Error: " + t.getMessage());
+                            }
+                        });
+                    }
+
+                    String key = generateRandomKey();
+                    sendMessage(key);
+                    mPlaybackThread.startPlayback(getApplicationContext(), key);
+                    binding.textViewMessageToSend.setText(key);
                 } else {
                     mPlaybackThread.stopPlayback();
                 }
 
                 if (mPlaybackThread.playing()) {
-                    ((Button) findViewById(R.id.buttonTogglePlayback)).setText("Stop Playing");
-                    ((TextView) findViewById(R.id.textViewStatusOut)).setText("Status: Playing audio");
+                    binding.buttonTogglePlayback.setText("중지");
+                    binding.textViewStatusOut.setText("Status: Playing audio");
                 } else {
-                    ((Button) findViewById(R.id.buttonTogglePlayback)).setText("Send Message");
-                    ((TextView) findViewById(R.id.textViewStatusOut)).setText("Status: Idle");
+                    binding.buttonTogglePlayback.setText("출석 시작");
+                    binding.textViewStatusOut.setText("Status: Idle");
                 }
             }
         });
@@ -165,6 +189,36 @@ public class MainActivity extends AppCompatActivity {
                 grantResults[0] == PackageManager.PERMISSION_GRANTED) {
             mCapturingThread.stopCapturing();
         }
+    }
+
+    private String generateRandomKey() {
+        int leftLimit = 48; // 0
+        int rightLimit = 122; // z
+        int targetStringLength = 8;
+        Random random = new Random();
+        String generatedString = "";
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+            generatedString = random.ints(leftLimit, rightLimit + 1)
+                    .filter(i -> (i <= 57 || i >= 65) && (i <= 90 || i >= 97))
+                    .limit(targetStringLength)
+                    .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)
+                    .toString();
+        }
+
+        return generatedString;
+    }
+
+    private void initRetrofitApi() {
+        client = new OkHttpClient.Builder().connectTimeout(10, TimeUnit.SECONDS)
+                .readTimeout(10, TimeUnit.SECONDS)
+                .writeTimeout(10, TimeUnit.SECONDS)
+                .build();
+        retrofit = new Retrofit.Builder()
+                .client(client)
+                .addConverterFactory(GsonConverterFactory.create())
+                .baseUrl(BASE_URL)
+                .build();
+        api = retrofit.create(ServerApi.class);
     }
 }
 
@@ -283,7 +337,7 @@ class PlaybackThread {
         return mThread != null;
     }
 
-    public void startPlayback() {
+    public void startPlayback(Context applicationContext, String key) {
         if (mThread != null)
             return;
 
@@ -292,7 +346,11 @@ class PlaybackThread {
         mThread = new Thread(new Runnable() {
             @Override
             public void run() {
-                play();
+                try {
+                    play(applicationContext, key);
+                } catch (FileNotFoundException e) {
+                    throw new RuntimeException(e);
+                }
             }
         });
         mThread.start();
@@ -306,7 +364,7 @@ class PlaybackThread {
         mThread = null;
     }
 
-    private void play() {
+    private void play(Context applicationContext, String key) throws FileNotFoundException {
         int bufferSize = AudioTrack.getMinBufferSize(SAMPLE_RATE, AudioFormat.CHANNEL_OUT_MONO,
                 AudioFormat.ENCODING_PCM_16BIT);
         if (bufferSize == AudioTrack.ERROR || bufferSize == AudioTrack.ERROR_BAD_VALUE) {
@@ -346,6 +404,14 @@ class PlaybackThread {
 
         Log.v(LOG_TAG, "Audio streaming started");
 
+//        FileOutputStream out = new FileOutputStream(applicationContext.getFilesDir() + "/" + key + ".wav");
+        long totalAudioLen = mNumSamples * 2L;
+        long totalDataLen = totalAudioLen + 36;
+//        try {
+//            addWavHeader(out, totalAudioLen, totalDataLen);
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
         short[] buffer = new short[bufferSize];
         mSamples.rewind();
         int limit = mNumSamples;
@@ -365,12 +431,98 @@ class PlaybackThread {
             }
             totalWritten += samplesToWrite;
             audioTrack.write(buffer, 0, samplesToWrite);
-        }
 
+
+            byte[] byteArray = shortArrayToByteArray(buffer);
+//            try {
+//                out.write(byteArray);
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            }
+        }
+//        try {
+//            out.close();
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
         if (!mShouldContinue) {
             audioTrack.release();
         }
 
         Log.v(LOG_TAG, "Audio streaming finished. Samples written: " + totalWritten);
+    }
+
+    private void addWavHeader(FileOutputStream out, long totalAudioLen, long totalDataLen) throws IOException {
+        int sampleRate = SAMPLE_RATE;
+        short channels = 1;
+        int bitsPerSample = 16;
+        long byteRate = SAMPLE_RATE * channels * bitsPerSample / 8;
+        long blockAlign = (long) (channels * bitsPerSample / 8);
+
+        byte[] header = new byte[44];
+
+        header[0] = 'R';  // RIFF/WAVE header
+        header[1] = 'I';
+        header[2] = 'F';
+        header[3] = 'F';
+        header[4] = (byte) (totalDataLen & 0xff);
+        header[5] = (byte) ((totalDataLen >> 8) & 0xff);
+        header[6] = (byte) ((totalDataLen >> 16) & 0xff);
+        header[7] = (byte) ((totalDataLen >> 24) & 0xff);
+        header[8] = 'W';
+        header[9] = 'A';
+        header[10] = 'V';
+        header[11] = 'E';
+        header[12] = 'f';  // 'fmt ' chunk
+        header[13] = 'm';
+        header[14] = 't';
+        header[15] = ' ';
+        header[16] = 16;  // 4 bytes: size of 'fmt ' chunk
+        header[17] = 0;
+        header[18] = 0;
+        header[19] = 0;
+        header[20] = 1;  // format = 1
+        header[21] = 0;
+        header[22] = (byte) channels;
+        header[23] = 0;
+        header[24] = (byte) (sampleRate & 0xff);
+        header[25] = (byte) ((sampleRate >> 8) & 0xff);
+        header[26] = (byte) ((sampleRate >> 16) & 0xff);
+        header[27] = (byte) ((sampleRate >> 24) & 0xff);
+        header[28] = (byte) (byteRate & 0xff);
+        header[29] = (byte) ((byteRate >> 8) & 0xff);
+        header[30] = (byte) ((byteRate >> 16) & 0xff);
+        header[31] = (byte) ((byteRate >> 24) & 0);
+        header[32] = (byte) (blockAlign);  // block align
+        header[33] = 0;
+        header[34] = (byte) bitsPerSample;  // bits per sample
+        header[35] = 0;
+        header[36] = 'd';
+        header[37] = 'a';
+        header[38] = 't';
+        header[39] = 'a';
+        header[40] = (byte) (totalAudioLen & 0xff);
+        header[41] = (byte) ((totalAudioLen >> 8) & 0xff);
+        header[42] = (byte) ((totalAudioLen >> 16) & 0xff);
+        header[43] = (byte) ((totalAudioLen >> 24) & 0xff);
+        out.write(header, 0, 44);
+
+    }
+
+    private static byte[] shortArrayToByteArray(short[] shortArray) {
+        int shortArrayLength = shortArray.length;
+        byte[] byteArray = new byte[shortArrayLength * 2]; // short는 2바이트이므로 * 2
+
+        for (int i = 0; i < shortArrayLength; i++) {
+            // 리틀 엔디안 방식으로 변환
+            byteArray[i * 2] = (byte) (shortArray[i] & 0xFF);
+            byteArray[i * 2 + 1] = (byte) ((shortArray[i] >> 8) & 0xFF);
+
+            // 빅 엔디안 방식으로 변환 (주석을 해제하면 됨)
+            // byteArray[i * 2] = (byte) ((shortArray[i] >> 8) & 0xFF);
+            // byteArray[i * 2 + 1] = (byte) (shortArray[i] & 0xFF);
+        }
+
+        return byteArray;
     }
 }
