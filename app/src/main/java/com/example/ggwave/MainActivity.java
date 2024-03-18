@@ -114,6 +114,8 @@ public class MainActivity extends AppCompatActivity {
                                     if (keyResp != null) {
                                         kMessageToSend = keyResp.getKey();
                                         binding.textViewMessageToSend.setText(kMessageToSend);
+                                        sendMessage(kMessageToSend);
+                                        mPlaybackThread.startPlayback(getApplicationContext(), kMessageToSend);
                                     }
                                 } else {
                                     try {
@@ -129,12 +131,12 @@ public class MainActivity extends AppCompatActivity {
                                 Log.e("ggwave", "Error: " + t.getMessage());
                             }
                         });
+                    } else {
+                        String key = generateRandomKey();
+                        sendMessage(key);
+                        mPlaybackThread.startPlayback(getApplicationContext(), key);
+                        binding.textViewMessageToSend.setText(key);
                     }
-
-                    String key = generateRandomKey();
-                    sendMessage(key);
-                    mPlaybackThread.startPlayback(getApplicationContext(), key);
-                    binding.textViewMessageToSend.setText(key);
                 } else {
                     mPlaybackThread.stopPlayback();
                 }

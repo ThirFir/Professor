@@ -1,22 +1,16 @@
 package com.example.ggwave;
 
 public class Attendance {
-    private String name;
-    private String time;
     private String id;
+    private String key;
 
-    public Attendance(String name, String time, String id) {
-        this.name = name;
-        this.time = time;
+    public Attendance(String id, String key) {
+        this.key = key;
         this.id = id;
     }
 
-    public String getName() {
-        return name;
-    }
-
-    public String getTime() {
-        return time;
+    public String getKey() {
+        return key;
     }
 
     public String getId() {
@@ -31,8 +25,6 @@ public class Attendance {
             return false;
         }
         Attendance attendance = (Attendance) o;
-        return name.equals(attendance.name) &&
-                time.equals(attendance.time) &&
-                id.equals(attendance.id);
+        return id.equals(attendance.id) && key.equals(attendance.key);
     }
 }
