@@ -38,6 +38,8 @@ public class MainActivity extends AppCompatActivity {
     private ActivityMainBinding binding;
     private AttendanceAdapter adapter;
 
+    private rtNoiseReducer rtNoiseReducer;
+
     private String kMessageToSend = generateRandomKey();
     private CapturingThread mCapturingThread;
     private PlaybackThread mPlaybackThread;
@@ -77,8 +79,9 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onCompletion() {
                 mPlaybackThread.stopPlayback();
-                binding.buttonTogglePlayback.setText("출석 시작");
-                binding.textViewStatusOut.setText("Status: Idle");
+                String key = kMessageToSend;
+                sendMessage(key);
+                mPlaybackThread.startPlayback(getApplicationContext(), key);
             }
         });
     }
@@ -101,7 +104,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        binding.buttonTogglePlayback.setOnClickListener( new View.OnClickListener() {
+        binding.lottiePlay.setOnClickListener( new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 if (mPlaybackThread == null || !mPlaybackThread.playing()) {
@@ -142,10 +145,11 @@ public class MainActivity extends AppCompatActivity {
                 }
 
                 if (mPlaybackThread.playing()) {
-                    binding.buttonTogglePlayback.setText("중지");
+                    binding.lottiePlay.playAnimation();
                     binding.textViewStatusOut.setText("Status: Playing audio");
                 } else {
-                    binding.buttonTogglePlayback.setText("출석 시작");
+                    binding.lottiePlay.cancelAnimation();
+                    binding.lottiePlay.setProgress(0);
                     binding.textViewStatusOut.setText("Status: Idle");
                 }
             }
@@ -221,6 +225,14 @@ public class MainActivity extends AppCompatActivity {
                 .baseUrl(BASE_URL)
                 .build();
         api = retrofit.create(ServerApi.class);
+    }
+
+    void initRTNR(){
+        try {
+            rtNoiseReducer = new rtNoiseReducer(this);
+        } catch (IOException e) {
+            Log.d("class", "Failed to create noise reduction");
+        }
     }
 }
 

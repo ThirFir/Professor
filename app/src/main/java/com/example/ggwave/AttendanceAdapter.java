@@ -35,9 +35,7 @@ public class AttendanceAdapter extends ListAdapter<Attendance, RecyclerView.View
             this.binding = binding;
         }
         public void bind(Attendance attendance) {
-            binding.tvName.setText(attendance.getName());
             binding.tvId.setText(attendance.getId());
-            binding.tvDate.setText(attendance.getTime());
 
         }
     }
