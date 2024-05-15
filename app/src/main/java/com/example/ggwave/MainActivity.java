@@ -24,6 +24,9 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ShortBuffer;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
@@ -46,10 +49,13 @@ public class MainActivity extends AppCompatActivity {
     private static final int REQUEST_RECORD_AUDIO = 13;
 
     // TODO : BASE URL
-    private static final String BASE_URL = "http://";
+    private static final String BASE_URL = "http://15.165.236.170:5000/professor/";
     private OkHttpClient client;
     private Retrofit retrofit;
     private ServerApi api;
+
+    private String id = "PROF001";
+    private String currentLecture;
 
     // Native interface:
     private native void initNative();
@@ -95,7 +101,8 @@ public class MainActivity extends AppCompatActivity {
         System.loadLibrary("test-cpp");
         initNative();
         adapter = new AttendanceAdapter();
-        // initRetrofitApi();
+        initRetrofitApi();
+        initLectureList();
 
         mCapturingThread = new CapturingThread(new AudioDataReceivedListener() {
             @Override
@@ -135,10 +142,10 @@ public class MainActivity extends AppCompatActivity {
                             }
                         });
                     } else {
-                        String key = generateRandomKey();
-                        sendMessage(key);
-                        mPlaybackThread.startPlayback(getApplicationContext(), key);
-                        binding.textViewMessageToSend.setText(key);
+                        kMessageToSend = generateRandomKey();
+                        sendMessage(kMessageToSend);
+                        mPlaybackThread.startPlayback(getApplicationContext(), kMessageToSend);
+                        binding.textViewMessageToSend.setText(kMessageToSend);
                     }
                 } else {
                     mPlaybackThread.stopPlayback();
@@ -233,6 +240,45 @@ public class MainActivity extends AppCompatActivity {
         } catch (IOException e) {
             Log.d("class", "Failed to create noise reduction");
         }
+    }
+
+    private void initLectureList() {
+        Log.e("ggwave1111", "initLectureList");
+        api.getLectureList(id).enqueue(new Callback<List<LectureResp>>() {
+            @Override
+            public void onResponse(Call<List<LectureResp>> call, Response<List<LectureResp>> response) {
+                if (response.isSuccessful()) {
+                    List<LectureResp> lectureList = response.body();
+                    if (lectureList != null) {
+                        for (LectureResp lecture : lectureList) {
+                            LocalTime now = LocalTime.now();
+                            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss");
+                            LocalTime startTime = LocalTime.parse(lecture.getStartTime(), formatter);
+                            LocalTime endTime = LocalTime.parse(lecture.getEndTime(), formatter);
+                            if ((now.isAfter(startTime) || now.equals(startTime)) && now.isBefore(endTime)) {
+                                currentLecture = lecture.getLectureCode();
+                                Log.e("ggwave1111", "Current lecture: " + currentLecture);
+                                break;
+                            }
+                        }
+                    }
+                    for(LectureResp lecture : lectureList) {
+                        Log.e("ggwave1111", "Lecture: " + lecture.getLectureCode() + " " + lecture.getLectureName() + " " + lecture.getProfessorId() + " " + lecture.getStartTime() + " " + lecture.getEndTime());
+                    }
+                } else {
+                    try {
+                        Log.e("ggwave1111", "Error: " + response.errorBody().string());
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<LectureResp>> call, Throwable t) {
+                Log.e("ggwave1111", "Error: " + t.getMessage());
+            }
+        });
     }
 }
 
