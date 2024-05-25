@@ -1,5 +1,6 @@
 plugins {
     id 'com.android.application'
+    id 'kotlin-android'
 }
 
 android {
@@ -31,6 +32,9 @@ android {
             path file('CMakeLists.txt')
         }
     }
+    sourceSets{
+        main.java.srcDirs += 'src/main/kotlin'
+    }
     viewBinding {
         enabled(true)
     }
@@ -55,5 +59,6 @@ dependencies {
     implementation files('libs/commons-math3-3.6.1.jar') // Complex, FFT
     implementation files('libs/sound-1.1.1.jar') // STFT
     implementation "org.tensorflow:tensorflow-lite-select-tf-ops:+" // TFLite LSTM
+    implementation 'org.jetbrains.kotlin:kotlin-stdlib:1.0.0'
 
 }

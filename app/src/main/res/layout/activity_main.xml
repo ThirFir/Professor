@@ -6,7 +6,35 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
+    <TextView
+        android:id="@+id/textViewWeeks"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="12dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/viewtop"
+        android:layout_marginEnd="24dp"
+        android:text="3주차" />
 
+    <TextView
+        android:id="@+id/textViewLectureName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="12dp"
+        android:layout_marginStart="12dp"
+        android:text="창의적공학설계"
+        android:textColor="@color/black"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toTopOf="@id/viewtop"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <androidx.constraintlayout.widget.Group
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="invisible"
+        app:constraint_referenced_ids="textViewMessageToSend, textViewMessageToSend1, textViewStatusOut"
+        />
     <TextView
         android:id="@+id/textViewMessageToSend1"
         android:layout_width="wrap_content"
@@ -14,7 +42,7 @@
         android:layout_marginTop="30dp"
         android:text="출석 키: "
         app:layout_constraintStart_toStartOf="@+id/lottie_play"
-        app:layout_constraintTop_toBottomOf="@+id/textViewStatusOut" />
+        app:layout_constraintTop_toBottomOf="@+id/lottie_play" />
 
     <TextView
         android:id="@+id/textViewMessageToSend"
@@ -29,9 +57,9 @@
         android:id="@+id/textViewStatusOut"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Status: Idle"
-        app:layout_constraintStart_toStartOf="@+id/textViewMessageToSend1"
-        app:layout_constraintTop_toBottomOf="@+id/lottie_play" />
+        android:text="정지 상태"
+        app:layout_constraintBottom_toTopOf="@id/lottie_play"
+        app:layout_constraintEnd_toEndOf="@id/lottie_play" />
 
 
     <com.airbnb.lottie.LottieAnimationView
@@ -72,8 +100,9 @@
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rv"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="0dp"
         app:layout_constraintTop_toBottomOf="@id/viewbottom"
+        app:layout_constraintBottom_toBottomOf="parent"
         tools:itemCount="12"
         tools:listitem="@layout/item_attendance" />
 
@@ -91,11 +120,12 @@
         app:lottie_rawRes="@raw/teach" />
 
     <View
+        android:id="@+id/view"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:background="#CBDFFF"
-        app:layout_constraintTop_toBottomOf="@id/viewtop"
-        app:layout_constraintBottom_toTopOf="@id/viewbottom" />
+        app:layout_constraintBottom_toTopOf="@id/viewbottom"
+        app:layout_constraintTop_toBottomOf="@id/viewtop" />
 
     <View
         android:id="@+id/viewtop"
@@ -109,10 +139,10 @@
         android:id="@+id/tv_name"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginStart="75dp"
         android:layout_marginTop="12dp"
         android:text="이름"
-        app:layout_constraintEnd_toStartOf="@+id/tv_id"
-        app:layout_constraintHorizontal_bias="0.5"
+        android:textStyle="bold"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/viewtop" />
 
@@ -120,22 +150,24 @@
         android:id="@+id/tv_id"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginStart="108dp"
         android:text="학번"
+        android:textStyle="bold"
         app:layout_constraintBottom_toBottomOf="@id/tv_name"
-        app:layout_constraintEnd_toStartOf="@+id/tv_date"
-        app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toEndOf="@+id/tv_name"
-        app:layout_constraintTop_toTopOf="@id/tv_name" />
+        app:layout_constraintTop_toTopOf="@id/tv_name"
+        app:layout_constraintVertical_bias="0.0" />
 
     <TextView
-        android:id="@+id/tv_date"
+        android:id="@+id/tv_is_checked"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="출석 시간"
+        android:layout_marginStart="80dp"
+        android:text="출석 여부"
+        android:textStyle="bold"
         app:layout_constraintBottom_toBottomOf="@id/tv_name"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toEndOf="@+id/tv_id"
-        app:layout_constraintTop_toTopOf="@id/tv_name" />
+        app:layout_constraintTop_toTopOf="@id/tv_name"
+        app:layout_constraintVertical_bias="0.0" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

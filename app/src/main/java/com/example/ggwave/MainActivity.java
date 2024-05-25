@@ -9,14 +9,16 @@ import android.media.AudioRecord;
 import android.media.AudioTrack;
 import android.media.MediaRecorder;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
-import android.view.View;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.example.ggwave.databinding.ActivityMainBinding;
 
@@ -26,6 +28,7 @@ import java.io.IOException;
 import java.nio.ShortBuffer;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
@@ -38,10 +41,17 @@ import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 public class MainActivity extends AppCompatActivity {
+
+    private Handler mHandler = new Handler(Looper.getMainLooper());
+    private Runnable mRunnable = new Runnable() {
+        @Override
+        public void run() {
+            initStudentList();
+            mHandler.postDelayed(this, 3000);
+        }
+    };
     private ActivityMainBinding binding;
     private AttendanceAdapter adapter;
-
-    private rtNoiseReducer rtNoiseReducer;
 
     private String kMessageToSend = generateRandomKey();
     private CapturingThread mCapturingThread;
@@ -54,13 +64,15 @@ public class MainActivity extends AppCompatActivity {
     private Retrofit retrofit;
     private ServerApi api;
 
-    private String id = "PROF001";
-    private String currentLecture;
+    private String id = "prof001";
+    private String currentLectureId = "";
+    private String currentLectureName = "";
 
     // Native interface:
     private native void initNative();
     private native void processCaptureData(short[] data);
     private native void sendMessage(String message);
+
 
     // Native callbacks:
     private void onNativeReceivedMessage(byte c_message[]) {
@@ -97,10 +109,15 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+        id = getIntent().getStringExtra("id");
 
         System.loadLibrary("test-cpp");
         initNative();
+
         adapter = new AttendanceAdapter();
+        binding.rv.setAdapter(adapter);
+        binding.rv.setLayoutManager(new LinearLayoutManager(this));
+
         initRetrofitApi();
         initLectureList();
 
@@ -111,55 +128,69 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        binding.lottiePlay.setOnClickListener( new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (mPlaybackThread == null || !mPlaybackThread.playing()) {
-                    if(api != null) {
-                        api.getRandomKey().enqueue(new Callback<KeyResp>() {
-                            @Override
-                            public void onResponse(Call<KeyResp> call, Response<KeyResp> response) {
-                                if (response.isSuccessful()) {
-                                    KeyResp keyResp = response.body();
-                                    if (keyResp != null) {
-                                        kMessageToSend = keyResp.getKey();
-                                        binding.textViewMessageToSend.setText(kMessageToSend);
-                                        sendMessage(kMessageToSend);
-                                        mPlaybackThread.startPlayback(getApplicationContext(), kMessageToSend);
-                                    }
-                                } else {
-                                    try {
-                                        Log.e("ggwave", "Error: " + response.errorBody().string());
-                                    } catch (IOException e) {
-                                        e.printStackTrace();
+        binding.lottiePlay.setOnClickListener(v -> {
+            if (mPlaybackThread == null || !mPlaybackThread.playing()) {
+                if(api != null) {
+                    api.getKey(currentLectureId).enqueue(new Callback<KeyResp>() {
+                        @Override
+                        public void onResponse(Call<KeyResp> call, Response<KeyResp> response) {
+                            if (response.isSuccessful()) {
+                                KeyResp keyResp = response.body();
+                                if (keyResp != null) {
+                                    kMessageToSend = keyResp.getKey();
+                                    binding.textViewMessageToSend.setText(kMessageToSend);
+                                    Log.e("ggwave1111", "Key: " + kMessageToSend);
+                                    sendMessage(kMessageToSend);
+                                    mPlaybackThread.startPlayback(getApplicationContext(), kMessageToSend);
+                                    mHandler.postDelayed(mRunnable, 3000);
+
+                                    if (mPlaybackThread.playing()) {
+                                        binding.lottiePlay.playAnimation();
+                                        binding.textViewStatusOut.setText("출석 진행 중");
+                                    } else {
+                                        binding.lottiePlay.cancelAnimation();
+                                        binding.lottiePlay.setProgress(0);
+                                        binding.textViewStatusOut.setText("정지 상태");
                                     }
                                 }
+                            } else {
+                                try {
+                                    Log.e("ggwave", "Error: " + response.errorBody().string());
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                }
                             }
+                        }
 
-                            @Override
-                            public void onFailure(Call<KeyResp> call, Throwable t) {
-                                Log.e("ggwave", "Error: " + t.getMessage());
-                            }
-                        });
+                        @Override
+                        public void onFailure(Call<KeyResp> call, Throwable t) {
+                            Log.e("ggwave", "Error: " + t.getMessage());
+                        }
+                    });
+                } else {
+                    Log.e("ggwave", "api is null");
+                    kMessageToSend = generateRandomKey();
+                    sendMessage(kMessageToSend);
+                    mPlaybackThread.startPlayback(getApplicationContext(), kMessageToSend);
+                    binding.textViewMessageToSend.setText(kMessageToSend);
+
+                    if (mPlaybackThread.playing()) {
+                        binding.lottiePlay.playAnimation();
+                        binding.textViewStatusOut.setText("출석 진행 중");
                     } else {
-                        kMessageToSend = generateRandomKey();
-                        sendMessage(kMessageToSend);
-                        mPlaybackThread.startPlayback(getApplicationContext(), kMessageToSend);
-                        binding.textViewMessageToSend.setText(kMessageToSend);
+                        binding.lottiePlay.cancelAnimation();
+                        binding.lottiePlay.setProgress(0);
+                        binding.textViewStatusOut.setText("정지 상태");
                     }
-                } else {
-                    mPlaybackThread.stopPlayback();
                 }
-
-                if (mPlaybackThread.playing()) {
-                    binding.lottiePlay.playAnimation();
-                    binding.textViewStatusOut.setText("Status: Playing audio");
-                } else {
-                    binding.lottiePlay.cancelAnimation();
-                    binding.lottiePlay.setProgress(0);
-                    binding.textViewStatusOut.setText("Status: Idle");
-                }
+            } else {
+                mHandler.removeCallbacks(mRunnable);
+                mPlaybackThread.stopPlayback();
+                binding.lottiePlay.cancelAnimation();
+                binding.lottiePlay.setProgress(0);
+                binding.textViewStatusOut.setText("정지 상태");
             }
+
         });
     }
 
@@ -234,16 +265,36 @@ public class MainActivity extends AppCompatActivity {
         api = retrofit.create(ServerApi.class);
     }
 
-    void initRTNR(){
-        try {
-            rtNoiseReducer = new rtNoiseReducer(this);
-        } catch (IOException e) {
-            Log.d("class", "Failed to create noise reduction");
-        }
+    private void initStudentList() {
+        api.getStudentList(currentLectureId).enqueue(new Callback<List<StudentResp>>() {
+            @Override
+            public void onResponse(Call<List<StudentResp>> call, Response<List<StudentResp>> response) {
+                if (response.isSuccessful()) {
+                    List<StudentResp> studentList = response.body();
+                    if (studentList != null) {
+                        List<Attendance> attendances = new ArrayList<>();
+                        for (StudentResp student : studentList) {
+                            attendances.add(new Attendance(student.getId(), student.getName(), student.attendance));
+                        }
+                        adapter.submitList(attendances);
+                    }
+                } else {
+                    try {
+                        Log.e("ggwave1111", "Error: " + response.errorBody().string());
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<StudentResp>> call, Throwable t) {
+                Log.e("ggwave1111", "Error: " + t.getMessage());
+            }
+        });
     }
 
     private void initLectureList() {
-        Log.e("ggwave1111", "initLectureList");
         api.getLectureList(id).enqueue(new Callback<List<LectureResp>>() {
             @Override
             public void onResponse(Call<List<LectureResp>> call, Response<List<LectureResp>> response) {
@@ -256,11 +307,18 @@ public class MainActivity extends AppCompatActivity {
                             LocalTime startTime = LocalTime.parse(lecture.getStartTime(), formatter);
                             LocalTime endTime = LocalTime.parse(lecture.getEndTime(), formatter);
                             if ((now.isAfter(startTime) || now.equals(startTime)) && now.isBefore(endTime)) {
-                                currentLecture = lecture.getLectureCode();
-                                Log.e("ggwave1111", "Current lecture: " + currentLecture);
+                                currentLectureId = lecture.getLectureCode();
+                                currentLectureName = lecture.getLectureName();
                                 break;
                             }
                         }
+                        if(currentLectureId == null || currentLectureId.isEmpty()) {
+                            currentLectureId = "lec002";
+                            currentLectureName = "데이터베이스 원론";
+                            Log.e("ggwave1111", "No lecture is in progress");
+                        }
+                        binding.textViewLectureName.setText(currentLectureName);
+                        initStudentList();
                     }
                     for(LectureResp lecture : lectureList) {
                         Log.e("ggwave1111", "Lecture: " + lecture.getLectureCode() + " " + lecture.getLectureName() + " " + lecture.getProfessorId() + " " + lecture.getStartTime() + " " + lecture.getEndTime());

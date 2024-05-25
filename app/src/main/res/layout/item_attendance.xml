@@ -10,9 +10,7 @@
         android:id="@+id/tv_name"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
         android:textSize="16sp"
-        android:textStyle="bold"
         app:layout_constraintEnd_toStartOf="@+id/tv_id"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
@@ -24,24 +22,22 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textSize="16sp"
-        android:textStyle="bold"
         app:layout_constraintBottom_toBottomOf="@id/tv_name"
-        app:layout_constraintEnd_toStartOf="@+id/tv_date"
+        app:layout_constraintEnd_toStartOf="@+id/tv_is_checked"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toEndOf="@+id/tv_name"
         app:layout_constraintTop_toTopOf="@id/tv_name"
         tools:text="2018111111" />
 
     <TextView
-        android:id="@+id/tv_date"
+        android:id="@+id/tv_is_checked"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textSize="16sp"
-        android:textStyle="bold"
         app:layout_constraintBottom_toBottomOf="@id/tv_name"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toEndOf="@+id/tv_id"
         app:layout_constraintTop_toTopOf="@id/tv_name"
-        tools:text="2024-01-01 00:00:00" />
+        tools:text="N" />
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -12,4 +12,10 @@ public interface ServerApi {
 
     @GET("lecturelist")
     Call<List<LectureResp>> getLectureList(@Query("professorID") String professorId);
+
+    @GET("lecture")
+    Call<List<StudentResp>> getStudentList(@Query("lectureCode") String lectureId);
+
+    @GET("attendance")
+    Call<KeyResp> getKey(@Query("lectureCode") String lectureId);
 }

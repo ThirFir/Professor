@@ -10,6 +10,7 @@ import androidx.core.view.WindowInsetsCompat;
 
 import com.example.ggwave.databinding.ActivityLoginBinding;
 
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 import okhttp3.OkHttpClient;
@@ -19,7 +20,7 @@ import retrofit2.converter.gson.GsonConverterFactory;
 public class LoginActivity extends AppCompatActivity {
 
     private ActivityLoginBinding binding;
-    private static final String BASE_URL = "http://15.165.236.170:5000/student/login/";
+    private static final String BASE_URL = "http://15.165.236.170:5000/professor/";
     private OkHttpClient client;
     private Retrofit retrofit;
     private ServerApi api;
@@ -29,10 +30,11 @@ public class LoginActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         binding = ActivityLoginBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+        initRetrofitApi();
 
         binding.btnLogin.setOnClickListener(v -> {
             Intent intent = new Intent(LoginActivity.this, MainActivity.class);
-            intent.putExtra("id", binding.etId.getText().toString());
+            intent.putExtra("id", Objects.requireNonNull(binding.etId.getText()).toString());
             startActivity(intent);
         });
     }

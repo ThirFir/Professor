@@ -1,6 +1,5 @@
 package com.example.ggwave;
 
-import android.annotation.SuppressLint;
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
 
@@ -10,6 +9,8 @@ import androidx.recyclerview.widget.ListAdapter;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.ggwave.databinding.ItemAttendanceBinding;
+
+import java.util.Objects;
 
 public class AttendanceAdapter extends ListAdapter<Attendance, RecyclerView.ViewHolder> {
     protected AttendanceAdapter() {
@@ -36,7 +37,12 @@ public class AttendanceAdapter extends ListAdapter<Attendance, RecyclerView.View
         }
         public void bind(Attendance attendance) {
             binding.tvId.setText(attendance.getId());
-
+            binding.tvName.setText(attendance.getName());
+            if(attendance.getAttended()) {
+                binding.tvIsChecked.setText("Y");
+            } else {
+                binding.tvIsChecked.setText("N");
+            }
         }
     }
 
@@ -44,7 +50,7 @@ public class AttendanceAdapter extends ListAdapter<Attendance, RecyclerView.View
 
         @Override
         public boolean areItemsTheSame(@NonNull Attendance oldItem, @NonNull Attendance newItem) {
-            return oldItem == newItem;
+            return Objects.equals(oldItem.getId(), newItem.getId());
         }
 
         @Override

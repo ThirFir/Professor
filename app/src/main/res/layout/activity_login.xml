@@ -5,21 +5,32 @@
     android:padding="16dp"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <EditText
-        android:id="@+id/et_id"
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/et_id_container"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:hint="학번"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
-        />
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/et_id"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            />
+
+    </com.google.android.material.textfield.TextInputLayout>
+
 
     <Button
         android:id="@+id/btn_login"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="12dp"
-        app:layout_constraintTop_toBottomOf="@id/et_id"
-        android:text="로그인" />
-
+        android:text="로그인"
+        app:layout_constraintTop_toBottomOf="@id/et_id_container"
+        style="?attr/materialButtonOutlinedStyle"
+        />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
